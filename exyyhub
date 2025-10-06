@@ -1,0 +1,122 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Hunty Zombie Hub",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "by ChatGPT",
+    ConfigurationSaving = {
+        Enabled = false,
+    },
+    Discord = {
+        Enabled = false,
+    },
+    KeySystem = false
+})
+
+local FarmTab = Window:CreateTab("Farm", 4483362458)
+local HotkeyTab = Window:CreateTab("Hotkeys", 4483362458)
+
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- AutoFarm
+local autofarmEnabled = false
+FarmTab:CreateToggle({
+    Name = "Auto Farm",
+    CurrentValue = false,
+    Flag = "AutoFarm",
+    Callback = function(v)
+        autofarmEnabled = v
+        if v then
+            task.spawn(function()
+                while autofarmEnabled do
+                    task.wait(0.4)
+                    local zombiesFolder = workspace:FindFirstChild("Entities")
+                    if not zombiesFolder then continue end
+
+                    local nearest, nearestDist = nil, math.huge
+                    for _, model in ipairs(zombiesFolder:GetChildren()) do
+                        if model.Name:lower():find("zombie") then
+                            local part = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart", true)
+                            if part and part:IsA("BasePart") and not part.Anchored then
+                                local dist = (hrp.Position - part.Position).Magnitude
+                                if dist < nearestDist then
+                                    nearest = part
+                                    nearestDist = dist
+                                end
+                            end
+                        end
+                    end
+                    if nearest then
+                        hrp.CFrame = nearest.CFrame + Vector3.new(0, 3, 0)
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- AutoDoor
+local autodoorEnabled = false
+FarmTab:CreateToggle({
+    Name = "Auto Door",
+    CurrentValue = false,
+    Flag = "AutoDoor",
+    Callback = function(v)
+        autodoorEnabled = v
+        if v then
+            task.spawn(function()
+                while autodoorEnabled do
+                    task.wait(0.5)
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if obj:IsA("NumberValue") and (obj.Name == "L距離" or obj.Name == "R距離") then
+                            if obj.Value <= 3 then
+                                local doorRoot = obj.Parent:FindFirstChild("Root")
+                                if hrp then
+                                    if doorRoot and doorRoot:IsA("BasePart") then
+                                        hrp.CFrame = doorRoot.CFrame + Vector3.new(0, 3, 0)
+                                    elseif obj.Parent:IsA("Model") then
+                                        local primary = obj.Parent.PrimaryPart or obj.Parent:FindFirstChildWhichIsA("BasePart")
+                                        if primary then
+                                            hrp.CFrame = primary.CFrame + Vector3.new(0, 3, 0)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- Hotkeys AutoPress
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local autoPress = {Z=false, X=false, C=false, E=false, G=false}
+
+local function startPressing(key)
+    task.spawn(function()
+        while autoPress[key] do
+            task.wait(0.1) -- 連打間隔
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[key], false, game)
+            task.wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode[key], false, game)
+        end
+    end)
+end
+
+for _, key in ipairs({"Z","X","C","E","G"}) do
+    HotkeyTab:CreateToggle({
+        Name = key.." AutoPress",
+        CurrentValue = false,
+        Flag = key.."Press",
+        Callback = function(v)
+            autoPress[key] = v
+            if v then
+                startPressing(key)
+            end
+        end
+    })
+end

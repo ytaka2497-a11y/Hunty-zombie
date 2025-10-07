@@ -1,0 +1,89 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Hunty Zombie Hub",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "by exyy",
+    ConfigurationSaving = {
+       Enabled = true,
+       FolderName = "HuntyZombieHub",
+       FileName = "Config"
+    },
+    KeySystem = false
+})
+
+local FarmTab = Window:CreateTab("Farm", 4483362458)
+
+local tpZombie = false
+FarmTab:CreateToggle({
+    Name = "Zombie AutoTP",
+    CurrentValue = false,
+    Flag = "ZombieTP",
+    Callback = function(v)
+        tpZombie = v
+        while tpZombie do
+            task.wait(0.5)
+            local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                for _,z in ipairs(workspace.Entities:GetChildren()) do
+                    if z.Name:lower():find("zombie") then
+                        local target = z:FindFirstChildWhichIsA("BasePart", true)
+                        if target then
+                            hrp.CFrame = target.CFrame * CFrame.new(0,3,0)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+local tpDoor = false
+FarmTab:CreateToggle({
+    Name = "Auto Door TP",
+    CurrentValue = false,
+    Flag = "DoorTP",
+    Callback = function(v)
+        tpDoor = v
+        while tpDoor do
+            task.wait(0.5)
+            local player = game.Players.LocalPlayer
+            local char = player.Character or player.CharacterAdded:Wait()
+            local hrp = char:WaitForChild("HumanoidRootPart")
+            for _, d in ipairs(workspace.School.Doors:GetDescendants()) do
+                if d:IsA("BasePart") and d.Name == "Part" then
+                    local x = math.floor(d.Position.X)
+                    if x <= -84 then
+                        local size = d.Size
+                        local frontOffset = d.CFrame.LookVector * (size.Z/2 + 2)
+                        local tpPos = d.Position + Vector3.new(0, size.Y/2 + 3, 0) + frontOffset
+                        hrp.CFrame = CFrame.new(tpPos)
+                        wait(0.5)
+                        break
+                    end
+                end
+            end
+        end
+    end
+})
+
+local vim = game:GetService("VirtualInputManager")
+local keys = {Z=false, X=false, C=false, E=false, G=false}
+
+for key,_ in pairs(keys) do
+    FarmTab:CreateToggle({
+        Name = key.." Toggle",
+        CurrentValue = false,
+        Callback = function(v)
+            keys[key] = v
+            spawn(function()
+                while keys[key] do
+                    vim:SendKeyEvent(true, Enum.KeyCode[key], false, game)
+                    vim:SendKeyEvent(false, Enum.KeyCode[key], false, game)
+                    task.wait(0.05)
+                end
+            end)
+        end
+    })
+end
